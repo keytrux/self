@@ -7,6 +7,7 @@ use App\Models\Recipe;
 use App\Support\IngredientResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class RecipeController extends Controller
@@ -24,7 +25,11 @@ class RecipeController extends Controller
         $sort = $request->string('sort')->toString() === 'name' ? 'name' : 'date';
 
         $recipes = Recipe::query()
-            ->with(['media', 'preparations.ingredients.product'])
+            ->visibleToUser(auth()->id())
+            ->with([
+                'media',
+                'preparations' => fn ($query) => $query->visibleToUser(auth()->id())->with('ingredients.product'),
+            ])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = trim($request->string('search'));
                 $query->where('name', 'like', "%{$search}%");
@@ -42,16 +47,19 @@ class RecipeController extends Controller
             ->get();
 
         $counts = Recipe::query()
+            ->visibleToUser(auth()->id())
             ->selectRaw('status, count(*) as total')
             ->groupBy('status')
             ->pluck('total', 'status');
 
-        return view('recipes.index', compact('recipes', 'statuses', 'counts', 'activeStatus', 'sort'));
+        $totalCount = Recipe::query()->visibleToUser(auth()->id())->count();
+
+        return view('recipes.index', compact('recipes', 'statuses', 'counts', 'activeStatus', 'sort', 'totalCount'));
     }
 
     public function create(): View
     {
-        $products = Product::query()->orderBy('name')->get();
+        $products = Product::query()->visibleToUser(auth()->id())->orderBy('name')->get();
 
         return view('recipes.create', compact('products'));
     }
@@ -120,9 +128,14 @@ class RecipeController extends Controller
 
     public function show(Recipe $recipe): View
     {
+        abort_unless($recipe->isVisibleTo(auth()->user()), 404);
+
         $recipe->load([
             'ingredients.product',
-            'preparations' => fn ($query) => $query->with('ingredients.product')->orderByDesc('prepared_at'),
+            'preparations' => fn ($query) => $query
+                ->visibleToUser(auth()->id())
+                ->with('ingredients.product')
+                ->orderByDesc('prepared_at'),
             'media',
         ]);
 
@@ -134,5 +147,93 @@ class RecipeController extends Controller
         ];
 
         return view('recipes.show', compact('recipe', 'totals'));
+    }
+
+    public function edit(Recipe $recipe): View
+    {
+        abort_unless($recipe->isOwnedBy(auth()->user()), 403);
+
+        $products = Product::query()->visibleToUser(auth()->id())->orderBy('name')->get();
+
+        return view('recipes.edit', compact('recipe', 'products'));
+    }
+
+    public function update(Request $request, Recipe $recipe): RedirectResponse
+    {
+        abort_unless($recipe->isOwnedBy(auth()->user()), 403);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'instructions' => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
+            'status' => ['required', 'in:to_cook,cooked,liked,disliked'],
+            'ingredients' => ['nullable', 'array'],
+            'links' => ['nullable', 'array'],
+            'links.*' => ['nullable', 'url', 'max:500'],
+            'videos' => ['nullable', 'array'],
+            'videos.*' => ['nullable', 'url', 'max:500'],
+            'photos' => ['nullable', 'array'],
+            'photos.*' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:10240'],
+            'remove_photos' => ['nullable', 'array'],
+            'remove_photos.*' => ['nullable', 'integer'],
+        ]);
+
+        $ingredients = IngredientResolver::resolve($request->input('ingredients', []));
+
+        $recipe->update([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'instructions' => $validated['instructions'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+            'status' => $validated['status'],
+        ]);
+
+        $recipe->ingredients()->delete();
+        foreach ($ingredients as $ingredient) {
+            $recipe->ingredients()->create($ingredient);
+        }
+
+        $recipe->media()->whereIn('type', ['link', 'video'])->delete();
+        foreach (array_filter($validated['links'] ?? []) as $url) {
+            $recipe->media()->create(['type' => 'link', 'url' => $url]);
+        }
+        foreach (array_filter($validated['videos'] ?? []) as $url) {
+            $recipe->media()->create(['type' => 'video', 'url' => $url]);
+        }
+
+        foreach (array_values($validated['remove_photos'] ?? []) as $mediaId) {
+            $photo = $recipe->media()->where('type', 'photo')->find($mediaId);
+            if ($photo) {
+                Storage::disk('public')->delete($photo->path);
+                $photo->delete();
+            }
+        }
+
+        foreach ($request->file('photos', []) as $photo) {
+            $recipe->media()->create([
+                'type' => 'photo',
+                'path' => $photo->store('recipe-photos', 'public'),
+            ]);
+        }
+
+        return redirect()
+            ->route('recipes.show', $recipe)
+            ->with('success', 'Рецепт обновлён.');
+    }
+
+    public function destroy(Recipe $recipe): RedirectResponse
+    {
+        abort_unless($recipe->isOwnedBy(auth()->user()), 403);
+
+        foreach ($recipe->media()->where('type', 'photo')->get() as $photo) {
+            Storage::disk('public')->delete($photo->path);
+        }
+
+        $recipe->delete();
+
+        return redirect()
+            ->route('recipes.index')
+            ->with('success', 'Рецепт удалён.');
     }
 }

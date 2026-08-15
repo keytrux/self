@@ -12,10 +12,22 @@
                     {{ $recipe->statusEmoji() }} {{ $recipe->statusLabel() }}
                 </span>
             </div>
-            <a href="{{ route('preparations.create', $recipe) }}"
-               class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-                + Новое приготовление
-            </a>
+            <div class="flex items-center gap-4">
+                @if ($recipe->isOwnedBy(auth()->user()))
+                    <a href="{{ route('preparations.create', $recipe) }}"
+                       class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+                        + Новое приготовление
+                    </a>
+                    <div class="flex items-center gap-3">
+                        <a href="{{ route('recipes.edit', $recipe) }}" class="text-blue-600 hover:underline">✏️ Редактировать</a>
+                        <form method="POST" action="{{ route('recipes.destroy', $recipe) }}" onsubmit="return confirm('Удалить рецепт «{{ $recipe->name }}»? Это удалит и все его приготовления.')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-red-600 hover:underline">🗑 Удалить</button>
+                        </form>
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
 

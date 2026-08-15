@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UserScoped;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 class Recipe extends Model
 {
-    use HasFactory;
+    use HasFactory, UserScoped;
 
     protected $fillable = [
         'user_id',
@@ -76,17 +78,17 @@ class Recipe extends Model
             ->first();
     }
 
-    public function photos(): \Illuminate\Support\Collection
+    public function photos(): Collection
     {
         return $this->media->where('type', 'photo')->values();
     }
 
-    public function videos(): \Illuminate\Support\Collection
+    public function videos(): Collection
     {
         return $this->media->where('type', 'video')->values();
     }
 
-    public function links(): \Illuminate\Support\Collection
+    public function links(): Collection
     {
         return $this->media->where('type', 'link')->values();
     }

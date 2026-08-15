@@ -57,13 +57,15 @@ class IngredientResolver
                     foreach ($validator->errors()->messages() as $key => $messages) {
                         $errors["ingredients.{$index}.{$key}"] = $messages[0];
                     }
+
                     continue;
                 }
 
                 $product = Product::query()
+                    ->visibleToUser(auth()->id())
                     ->where('name', $row['new_name'])
                     ->when(
-                        !empty($row['new_brand']),
+                        ! empty($row['new_brand']),
                         fn ($query) => $query->where('brand', $row['new_brand']),
                         fn ($query) => $query->whereNull('brand'),
                     )
@@ -85,7 +87,12 @@ class IngredientResolver
             } else {
                 $resolvedProductId = (int) $productId;
 
-                if (! Product::whereKey($resolvedProductId)->exists()) {
+                $product = Product::query()
+                    ->visibleToUser(auth()->id())
+                    ->whereKey($resolvedProductId)
+                    ->exists();
+
+                if (! $product) {
                     $errors["ingredients.{$index}.product_id"] = 'Выберите продукт из списка или создайте новый.';
 
                     continue;

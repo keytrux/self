@@ -12,6 +12,22 @@
             <a href="{{ route('recipes.index') }}" class="font-semibold text-gray-800 hover:text-gray-600">КБЖУ</a>
             <a href="{{ route('recipes.index') }}" class="text-gray-600 hover:text-gray-900">Рецепты</a>
             <a href="{{ route('products.index') }}" class="text-gray-600 hover:text-gray-900">Продукты</a>
+
+            <div class="ml-auto flex items-center gap-4">
+                @auth
+                    <span class="text-sm text-gray-600">{{ auth()->user()->name }}</span>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="text-sm text-gray-600 hover:text-gray-900">Выйти</button>
+                    </form>
+                @else
+                    <a href="{{ route('login') }}" class="text-sm text-gray-600 hover:text-gray-900">Войти</a>
+                    <a href="{{ route('register') }}"
+                       class="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700">
+                        Регистрация
+                    </a>
+                @endauth
+            </div>
         </div>
     </nav>
 
