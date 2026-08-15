@@ -7,11 +7,25 @@
         <a href="{{ route('products.index') }}" class="text-blue-600 hover:underline">← К списку продуктов</a>
         <div class="flex items-center justify-between mt-2">
             <h1 class="text-2xl font-bold">{{ $product->name }}</h1>
-            <a href="{{ route('products.create') }}" class="text-blue-600 hover:underline">+ Добавить продукт</a>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('products.create') }}" class="text-blue-600 hover:underline">+ Добавить продукт</a>
+                @if ($product->isOwnedBy(auth()->user()))
+                    <a href="{{ route('products.edit', $product) }}" class="text-blue-600 hover:underline">✏️ Редактировать</a>
+                    <form method="POST" action="{{ route('products.destroy', $product) }}" onsubmit="return confirm('Удалить продукт «{{ $product->name }}»?')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="text-red-600 hover:underline">🗑 Удалить</button>
+                    </form>
+                @endif
+            </div>
         </div>
     </div>
 
     <div class="bg-white rounded-lg shadow p-6 max-w-2xl">
+        @if ($errors->has('product'))
+            <p class="mb-4 rounded-lg bg-red-50 text-red-700 px-4 py-3 text-sm">⚠️ {{ $errors->first('product') }}</p>
+        @endif
+
         @if ($product->brand)
             <p class="text-gray-600 mb-4"><strong>Бренд:</strong> {{ $product->brand }}</p>
         @endif

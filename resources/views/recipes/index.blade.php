@@ -19,7 +19,7 @@
     <div class="mb-6 flex flex-wrap items-center gap-2">
         <a href="{{ route('recipes.index') }}"
            class="rounded-full px-3 py-1 text-sm {{ $activeStatus === '' ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
-            Все ({{ $recipes->count() }})
+            Все ({{ $totalCount }})
         </a>
 
         @foreach ($statuses as $key => $status)

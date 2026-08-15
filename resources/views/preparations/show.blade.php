@@ -5,8 +5,22 @@
 @section('content')
     <div class="mb-6">
         <a href="{{ route('recipes.show', $preparation->recipe) }}" class="text-blue-600 hover:underline">← К рецепту</a>
-        <h1 class="text-2xl font-bold mt-2">{{ $preparation->recipe->name }}</h1>
-        <p class="text-gray-600">Приготовление от {{ $preparation->prepared_at->format('d.m.Y') }}</p>
+        <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold mt-2">{{ $preparation->recipe->name }}</h1>
+            <p class="text-gray-600">Приготовление от {{ $preparation->prepared_at->format('d.m.Y') }}</p>
+        </div>
+        <div class="flex items-center gap-3">
+            @if ($preparation->isOwnedBy(auth()->user()))
+                <a href="{{ route('preparations.edit', $preparation) }}" class="text-blue-600 hover:underline">✏️ Редактировать</a>
+                <form method="POST" action="{{ route('preparations.destroy', $preparation) }}" onsubmit="return confirm('Удалить это приготовление?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="text-red-600 hover:underline">🗑 Удалить</button>
+                </form>
+            @endif
+        </div>
+    </div>
     </div>
 
     <div class="bg-white rounded-lg shadow p-5 mb-6">
