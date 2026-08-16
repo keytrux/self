@@ -11,36 +11,75 @@
         </a>
     </div>
 
-    <form method="GET" action="{{ route('recipes.index') }}" class="mb-4">
-        <input type="text" name="search" value="{{ request('search') }}" placeholder="Поиск по названию..."
-               class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
+    <form method="GET" action="{{ route('recipes.index') }}" class="mb-4" id="recipes-search-form">
+        <div class="relative">
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Поиск по названию..."
+                   id="recipes-search"
+                   class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500"
+                   data-debounce-submit="#recipes-search-form">
+            <span class="absolute right-3 top-2.5 text-gray-400">🔍</span>
+        </div>
+        @foreach (request()->except(['search', 'page']) as $key => $value)
+            @if (is_array($value))
+                @foreach ($value as $v)
+                    <input type="hidden" name="{{ $key }}[]" value="{{ $v }}">
+                @endforeach
+            @else
+                <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+            @endif
+        @endforeach
     </form>
 
     <div class="mb-6 flex flex-wrap items-center gap-2">
-        <a href="{{ route('recipes.index') }}"
-           class="rounded-full px-3 py-1 text-sm {{ $activeStatus === '' ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
+        <a href="{{ route('recipes.index', array_merge(request()->except(['status', 'page']), ['status' => 'all'])) }}"
+           class="rounded-full px-3 py-1 text-sm {{ $activeStatus === 'all' ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
             Все ({{ $totalCount }})
         </a>
 
-        @foreach ($statuses as $key => $status)
-            <a href="{{ route('recipes.index', array_merge(request()->only(['search', 'sort']), ['status' => $key])) }}"
-               class="rounded-full px-3 py-1 text-sm {{ $activeStatus === $key ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
-                {{ $status['emoji'] }} {{ $status['label'] }} ({{ $counts[$key] ?? 0 }})
+        <a href="{{ route('recipes.index', array_merge(request()->except(['status', 'page']), ['status' => 'to_cook'])) }}"
+           class="rounded-full px-3 py-1 text-sm {{ $activeStatus === 'to_cook' ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
+            📝 Хочу приготовить ({{ $totalCount - $cookedCount }})
+        </a>
+
+        <a href="{{ route('recipes.index', array_merge(request()->except(['status', 'page']), ['status' => 'cooked'])) }}"
+           class="rounded-full px-3 py-1 text-sm {{ $activeStatus === 'cooked' ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
+            ✓ Приготовлено ({{ $cookedCount }})
+        </a>
+
+        @if (auth()->check())
+            <a href="{{ route('recipes.index', array_merge(request()->except(['favorites', 'page']), ['favorites' => $favoritesOnly ? 0 : 1])) }}"
+               class="rounded-full px-3 py-1 text-sm {{ $favoritesOnly ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
+                ★ Избранное
             </a>
-        @endforeach
+        @endif
 
         <div class="ml-auto flex items-center gap-2">
             <span class="text-sm text-gray-500">Сортировка:</span>
-            <a href="{{ route('recipes.index', array_merge(request()->except(['sort']), ['sort' => 'date'])) }}"
+            <a href="{{ route('recipes.index', array_merge(request()->except(['sort', 'page']), ['sort' => 'date'])) }}"
                class="rounded-full px-3 py-1 text-sm {{ $sort === 'date' ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
                 По дате
             </a>
-            <a href="{{ route('recipes.index', array_merge(request()->except(['sort']), ['sort' => 'name'])) }}"
+            <a href="{{ route('recipes.index', array_merge(request()->except(['sort', 'page']), ['sort' => 'name'])) }}"
                class="rounded-full px-3 py-1 text-sm {{ $sort === 'name' ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
                 По названию
             </a>
         </div>
     </div>
+
+    @if ($categories->isNotEmpty())
+        <div class="mb-6 flex flex-wrap items-center gap-2">
+            <a href="{{ route('recipes.index', array_merge(request()->except(['category', 'page']), ['category' => ''])) }}"
+               class="rounded-full px-3 py-1 text-sm {{ $categoryId === null ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
+                Все категории
+            </a>
+            @foreach ($categories as $category)
+                <a href="{{ route('recipes.index', array_merge(request()->except(['category', 'page']), ['category' => $category->id])) }}"
+                   class="rounded-full px-3 py-1 text-sm {{ $categoryId === $category->id ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
+                    {{ $category->name }}
+                </a>
+            @endforeach
+        </div>
+    @endif
 
     @if ($recipes->isEmpty())
         <p class="text-gray-500">Рецептов пока нет. Добавьте первый!</p>
@@ -64,14 +103,27 @@
                     </a>
 
                     <div class="p-4 flex flex-col flex-1">
-                        <h2 class="font-semibold text-gray-900">
-                            <a href="{{ route('recipes.show', $recipe) }}" class="hover:underline">{{ $recipe->name }}</a>
-                        </h2>
+                        <div class="flex items-start justify-between gap-2">
+                            <h2 class="font-semibold text-gray-900">
+                                <a href="{{ route('recipes.show', $recipe) }}" class="hover:underline">{{ $recipe->name }}</a>
+                            </h2>
+                            @if (auth()->check() && $recipe->isFavoritedBy(auth()->user()))
+                                <span class="text-yellow-500" title="В избранном">★</span>
+                            @endif
+                        </div>
 
-                        <div class="mt-2 flex items-center gap-2 text-sm">
+                        <div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
                             <span class="rounded-full bg-gray-100 px-2 py-0.5 text-gray-700">
-                                {{ $recipe->statusEmoji() }} {{ $recipe->statusLabel() }}
+                                {{ $recipe->isCooked() ? '✓ Приготовлено' : '📝 Хочу приготовить' }}
                             </span>
+                            @if ($recipe->category)
+                                <span class="rounded-full bg-gray-100 px-2 py-0.5 text-gray-700">
+                                    {{ $recipe->category->name }}
+                                </span>
+                            @endif
+                            @if ($recipe->isShared())
+                                <span class="rounded-full bg-blue-50 px-2 py-0.5 text-blue-700">🌐 Публичный</span>
+                            @endif
                         </div>
 
                         <div class="mt-auto pt-4 text-sm text-gray-500">
@@ -89,6 +141,10 @@
                     </div>
                 </div>
             @endforeach
+        </div>
+
+        <div class="mt-6">
+            {{ $recipes->links() }}
         </div>
     @endif
 @endsection

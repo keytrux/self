@@ -21,16 +21,27 @@
             </div>
 
             <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Статус</label>
-                <select name="status"
+                <label class="block text-sm font-medium text-gray-700 mb-1">Категория</label>
+                <select name="category_id"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500">
-                    <option value="to_cook" @selected(old('status', $recipe->status) === 'to_cook')>📝 Хочу приготовить</option>
-                    <option value="cooked" @selected(old('status', $recipe->status) === 'cooked')>🍳 Приготовлено</option>
-                    <option value="liked" @selected(old('status', $recipe->status) === 'liked')>❤️ Понравилось</option>
-                    <option value="disliked" @selected(old('status', $recipe->status) === 'disliked')>👎 Не понравилось</option>
+                    <option value="">Без категории</option>
+                    @foreach ($categories as $category)
+                        <option value="{{ $category->id }}" @selected(old('category_id', $recipe->category_id) == $category->id)>{{ $category->name }}</option>
+                    @endforeach
                 </select>
-                @error('status') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                @error('category_id') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
+
+            @if (auth()->user()->is_admin)
+                <div class="sm:col-span-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="is_public" value="1"
+                               @checked(old('is_public', $recipe->is_public)) class="rounded">
+                        <span class="text-sm font-medium text-gray-700">Публичный рецепт (виден всем пользователям)</span>
+                    </label>
+                    @error('is_public') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+            @endif
 
             <div class="sm:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
@@ -48,7 +59,12 @@
             </div>
             @php
                 $ingredients = $recipe->ingredients
-                    ->map(fn ($ing) => ['product_id' => $ing->product_id, 'amount' => $ing->amount, 'unit' => $ing->unit])
+                    ->map(fn ($ing) => [
+                        'product_id' => $ing->product_id,
+                        'product_name' => $ing->product?->name ?? '',
+                        'amount' => $ing->amount,
+                        'unit' => $ing->unit,
+                    ])
                     ->toArray();
             @endphp
             @include('partials.ingredient-rows', ['ingredients' => $ingredients])

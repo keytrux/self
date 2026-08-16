@@ -27,10 +27,13 @@
                 @enderror
             </div>
 
-            <div class="flex items-center gap-2">
-                <input type="checkbox" name="remember" id="remember"
-                       class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                <label for="remember" class="text-sm text-gray-600">Запомнить меня</label>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" name="remember" id="remember"
+                           class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <label for="remember" class="text-sm text-gray-600">Запомнить меня</label>
+                </div>
+                <a href="{{ route('password.request') }}" class="text-sm text-blue-600 hover:underline">Забыли пароль?</a>
             </div>
 
             <button type="submit"

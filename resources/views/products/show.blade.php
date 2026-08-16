@@ -8,9 +8,27 @@
         <div class="flex items-center justify-between mt-2">
             <h1 class="text-2xl font-bold">{{ $product->name }}</h1>
             <div class="flex items-center gap-3">
+                @if ($product->is_public)
+                    <span class="rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">🌐 Общий</span>
+                @endif
+                @if (! $product->is_active)
+                    <span class="rounded-full bg-red-50 px-3 py-1 text-sm text-red-600">Архивный</span>
+                @endif
                 <a href="{{ route('products.create') }}" class="text-blue-600 hover:underline">+ Добавить продукт</a>
-                @if ($product->isOwnedBy(auth()->user()))
+                @if ($product->isManagedBy(auth()->user()))
                     <a href="{{ route('products.edit', $product) }}" class="text-blue-600 hover:underline">✏️ Редактировать</a>
+                    @if ($product->is_active)
+                        <form method="POST" action="{{ route('products.archive', $product) }}"
+                              onsubmit="return confirm('Архивировать продукт «{{ $product->name }}»?')">
+                            @csrf
+                            <button type="submit" class="text-amber-600 hover:underline">📦 В архив</button>
+                        </form>
+                    @else
+                        <form method="POST" action="{{ route('products.restore', $product) }}">
+                            @csrf
+                            <button type="submit" class="text-green-600 hover:underline">♻️ Восстановить</button>
+                        </form>
+                    @endif
                     <form method="POST" action="{{ route('products.destroy', $product) }}" onsubmit="return confirm('Удалить продукт «{{ $product->name }}»?')">
                         @csrf
                         @method('DELETE')

@@ -15,12 +15,20 @@ class PreparationIngredient extends Model
         'product_id',
         'amount',
         'unit',
+        'calories',
+        'protein',
+        'fat',
+        'carbs',
     ];
 
     protected function casts(): array
     {
         return [
             'amount' => 'float',
+            'calories' => 'float',
+            'protein' => 'float',
+            'fat' => 'float',
+            'carbs' => 'float',
         ];
     }
 
@@ -34,23 +42,27 @@ class PreparationIngredient extends Model
         return $this->belongsTo(Product::class);
     }
 
+    /**
+     * КБЖУ ингредиента считается от сохранённого snapshot,
+     * чтобы история не менялась при изменении продукта.
+     */
     public function calories(): float
     {
-        return $this->product->calories * $this->amount / 100;
+        return $this->calories * $this->amount / 100;
     }
 
     public function protein(): float
     {
-        return $this->product->protein * $this->amount / 100;
+        return $this->protein * $this->amount / 100;
     }
 
     public function fat(): float
     {
-        return $this->product->fat * $this->amount / 100;
+        return $this->fat * $this->amount / 100;
     }
 
     public function carbs(): float
     {
-        return $this->product->carbs * $this->amount / 100;
+        return $this->carbs * $this->amount / 100;
     }
 }

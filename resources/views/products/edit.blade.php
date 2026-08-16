@@ -80,6 +80,17 @@
             </div>
         </div>
 
+        @if (auth()->user()->is_admin)
+            <div class="mt-6">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="is_public" value="1"
+                           @checked(old('is_public', $product->is_public)) class="rounded">
+                    <span class="text-sm font-medium text-gray-700">Общий продукт (доступен всем пользователям)</span>
+                </label>
+                @error('is_public') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+            </div>
+        @endif
+
         <div class="mt-6 flex items-center gap-3">
             <button type="submit" class="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700">
                 Сохранить изменения

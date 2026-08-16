@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 class Preparation extends Model
 {
@@ -46,6 +47,21 @@ class Preparation extends Model
     public function media(): HasMany
     {
         return $this->hasMany(Media::class);
+    }
+
+    public function photos(): Collection
+    {
+        return $this->media->where('type', 'photo')->values();
+    }
+
+    public function videos(): Collection
+    {
+        return $this->media->where('type', 'video')->values();
+    }
+
+    public function links(): Collection
+    {
+        return $this->media->where('type', 'link')->values();
     }
 
     public function calories(): float

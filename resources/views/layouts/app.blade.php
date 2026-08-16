@@ -12,6 +12,11 @@
             <a href="{{ route('recipes.index') }}" class="font-semibold text-gray-800 hover:text-gray-600">КБЖУ</a>
             <a href="{{ route('recipes.index') }}" class="text-gray-600 hover:text-gray-900">Рецепты</a>
             <a href="{{ route('products.index') }}" class="text-gray-600 hover:text-gray-900">Продукты</a>
+            @auth
+                @if (auth()->user()->is_admin)
+                    <a href="{{ route('categories.index') }}" class="text-gray-600 hover:text-gray-900">Категории</a>
+                @endif
+            @endauth
 
             <div class="ml-auto flex items-center gap-4">
                 @auth

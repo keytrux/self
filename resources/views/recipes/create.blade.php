@@ -20,16 +20,26 @@
             </div>
 
             <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Статус</label>
-                <select name="status"
+                <label class="block text-sm font-medium text-gray-700 mb-1">Категория</label>
+                <select name="category_id"
                         class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500">
-                    <option value="to_cook" @selected(old('status', 'to_cook') === 'to_cook')>📝 Хочу приготовить</option>
-                    <option value="cooked" @selected(old('status') === 'cooked')>🍳 Приготовлено</option>
-                    <option value="liked" @selected(old('status') === 'liked')>❤️ Понравилось</option>
-                    <option value="disliked" @selected(old('status') === 'disliked')>👎 Не понравилось</option>
+                    <option value="">Без категории</option>
+                    @foreach ($categories as $category)
+                        <option value="{{ $category->id }}" @selected(old('category_id') == $category->id)>{{ $category->name }}</option>
+                    @endforeach
                 </select>
-                @error('status') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                @error('category_id') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
+
+            @if (auth()->user()->is_admin)
+                <div class="sm:col-span-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="is_public" value="1" @checked(old('is_public')) class="rounded">
+                        <span class="text-sm font-medium text-gray-700">Публичный рецепт (виден всем пользователям)</span>
+                    </label>
+                    @error('is_public') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+            @endif
 
             <div class="sm:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Описание</label>

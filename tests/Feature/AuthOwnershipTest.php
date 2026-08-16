@@ -341,7 +341,7 @@ class AuthOwnershipTest extends TestCase
                 'ingredients' => [],
             ]);
 
-        $response->assertForbidden();
+        $response->assertNotFound();
 
         $preparation = Preparation::create([
             'recipe_id' => $recipe->id,
@@ -353,7 +353,7 @@ class AuthOwnershipTest extends TestCase
         $this->actingAs($user)->get("/preparations/{$preparation->id}")->assertNotFound();
     }
 
-    public function test_cannot_add_preparation_to_shared_recipe(): void
+    public function test_user_can_add_own_preparation_to_shared_recipe(): void
     {
         $user = User::factory()->create();
 
@@ -361,7 +361,8 @@ class AuthOwnershipTest extends TestCase
 
         $this->actingAs($user)
             ->get("/recipes/{$recipe->id}/preparations/create")
-            ->assertForbidden();
+            ->assertOk()
+            ->assertSee('Общий рецепт');
 
         $this->actingAs($user)
             ->post("/recipes/{$recipe->id}/preparations", [
@@ -369,7 +370,7 @@ class AuthOwnershipTest extends TestCase
                 'total_weight' => 500,
                 'ingredients' => [],
             ])
-            ->assertForbidden();
+            ->assertSessionHasErrors('ingredients');
     }
 
     public function test_recipe_can_reference_shared_product_in_ingredients(): void

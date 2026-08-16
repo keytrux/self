@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\UserScoped;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Product extends Model
 {
     use HasFactory, UserScoped;
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
+    }
 
     protected $fillable = [
         'user_id',
@@ -24,6 +30,8 @@ class Product extends Model
         'image',
         'source_url',
         'notes',
+        'is_public',
+        'is_active',
     ];
 
     protected function casts(): array
@@ -33,6 +41,8 @@ class Product extends Model
             'protein' => 'float',
             'fat' => 'float',
             'carbs' => 'float',
+            'is_public' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
