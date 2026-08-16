@@ -15,6 +15,7 @@ class RecipeIngredient extends Model
         'product_id',
         'amount',
         'unit',
+        'sort_order',
     ];
 
     protected function casts(): array

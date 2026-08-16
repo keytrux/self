@@ -6,6 +6,7 @@ use App\Models\Concerns\UserScoped;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 
@@ -15,21 +16,35 @@ class Recipe extends Model
 
     protected $fillable = [
         'user_id',
+        'category_id',
         'name',
         'description',
         'instructions',
         'notes',
         'status',
+        'is_public',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_public' => 'boolean',
+        ];
+    }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
     public function ingredients(): HasMany
     {
-        return $this->hasMany(RecipeIngredient::class);
+        return $this->hasMany(RecipeIngredient::class)->orderBy('sort_order');
     }
 
     public function preparations(): HasMany
@@ -40,6 +55,26 @@ class Recipe extends Model
     public function media(): HasMany
     {
         return $this->hasMany(Media::class);
+    }
+
+    public function favoritedByUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'favorites', 'recipe_id', 'user_id')
+            ->withTimestamps();
+    }
+
+    public function isFavoritedBy(?User $user): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+
+        return $this->favoritedByUsers()->whereKey($user->id)->exists();
+    }
+
+    public function isCooked(): bool
+    {
+        return $this->preparations->isNotEmpty();
     }
 
     public function lastPreparation(): ?Preparation

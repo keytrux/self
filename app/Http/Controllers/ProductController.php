@@ -3,18 +3,44 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ProductController extends Controller
 {
+    /**
+     * Динамический поиск продуктов для выбора ингредиента (обработчик автокомплита).
+     * Только личные продукты пользователя + общие/публичные.
+     */
+    public function search(Request $request): JsonResponse
+    {
+        $query = trim((string) $request->string('q'));
+
+        $products = Product::query()
+            ->visibleToUser(auth()->id())
+            ->active()
+            ->when($query !== '', function ($builder) use ($query) {
+                $builder->where(function ($builder) use ($query) {
+                    $builder->where('name', 'like', "%{$query}%")
+                        ->orWhere('brand', 'like', "%{$query}%")
+                        ->orWhere('barcode', 'like', "%{$query}%");
+                });
+            })
+            ->orderBy('name')
+            ->limit(20)
+            ->get(['id', 'name', 'brand', 'calories']);
+
+        return response()->json($products);
+    }
+
     public function index(Request $request): View
     {
         $products = Product::query()
             ->visibleToUser(auth()->id())
+            ->when($request->boolean('include_archived') === false, fn ($query) => $query->active())
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = trim($request->string('search'));
 
@@ -25,7 +51,8 @@ class ProductController extends Controller
                 });
             })
             ->orderBy('name')
-            ->get();
+            ->paginate(20)
+            ->withQueryString();
 
         return view('products.index', compact('products'));
     }
@@ -39,7 +66,11 @@ class ProductController extends Controller
     {
         $validated = $request->validate($this->rules());
 
-        $product = Product::create($validated + ['user_id' => auth()->id()]);
+        $product = Product::create(
+            $validated
+            + ['user_id' => auth()->id()]
+            + ['is_public' => $request->user()->is_admin && $request->boolean('is_public')]
+        );
 
         return redirect()
             ->route('products.show', $product)
@@ -48,18 +79,21 @@ class ProductController extends Controller
 
     public function edit(Product $product): View
     {
-        abort_unless($product->isOwnedBy(auth()->user()), 403);
+        abort_unless($product->isManagedBy(auth()->user()), 403);
 
         return view('products.edit', compact('product'));
     }
 
     public function update(Request $request, Product $product): RedirectResponse
     {
-        abort_unless($product->isOwnedBy(auth()->user()), 403);
+        abort_unless($product->isManagedBy(auth()->user()), 403);
 
         $validated = $request->validate($this->rules($product));
 
-        $product->update($validated);
+        $product->update(
+            $validated
+            + ['is_public' => $request->user()->is_admin && $request->boolean('is_public')]
+        );
 
         return redirect()
             ->route('products.show', $product)
@@ -68,12 +102,15 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
-        abort_unless($product->isOwnedBy(auth()->user()), 403);
+        abort_unless($product->isManagedBy(auth()->user()), 403);
 
         if ($product->recipeIngredients()->exists() || $product->preparationIngredients()->exists()) {
-            throw ValidationException::withMessages([
-                'product' => 'Нельзя удалить продукт: он используется в ингредиентах рецептов или приготовлений.',
-            ]);
+            // По ТЗ: используемый продукт нельзя удалить — архивируем.
+            $product->update(['is_active' => false]);
+
+            return redirect()
+                ->route('products.show', $product)
+                ->with('success', 'Продукт используется в рецептах и заархивирован.');
         }
 
         $product->delete();
@@ -81,6 +118,32 @@ class ProductController extends Controller
         return redirect()
             ->route('products.index')
             ->with('success', 'Продукт удалён.');
+    }
+
+    /**
+     * Архивация: продукт, используемый в рецептах/приготовлениях,
+     * не удаляется, а помечается is_active = false.
+     */
+    public function archive(Product $product): RedirectResponse
+    {
+        abort_unless($product->isManagedBy(auth()->user()), 403);
+
+        $product->update(['is_active' => false]);
+
+        return redirect()
+            ->route('products.show', $product)
+            ->with('success', 'Продукт архивирован.');
+    }
+
+    public function restore(Product $product): RedirectResponse
+    {
+        abort_unless($product->isManagedBy(auth()->user()), 403);
+
+        $product->update(['is_active' => true]);
+
+        return redirect()
+            ->route('products.show', $product)
+            ->with('success', 'Продукт восстановлен.');
     }
 
     public function show(Product $product): View

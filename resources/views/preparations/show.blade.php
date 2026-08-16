@@ -143,6 +143,68 @@
         </div>
     @endif
 
+    @if ($preparation->photos()->isNotEmpty())
+        <div class="bg-white rounded-lg shadow p-5 mt-6">
+            <h2 class="text-sm font-semibold text-gray-500 mb-3">Фото результата</h2>
+            <div class="carousel relative overflow-hidden rounded-lg" data-carousel>
+                <div class="flex transition-transform duration-300" data-carousel-track>
+                    @foreach ($preparation->photos() as $photo)
+                        <div class="w-full shrink-0" data-carousel-slide>
+                            <img src="{{ asset('storage/' . $photo->path) }}" alt="{{ $preparation->recipe->name }}"
+                                 class="w-full h-64 sm:h-96 object-cover">
+                        </div>
+                    @endforeach
+                </div>
+                @if ($preparation->photos()->count() > 1)
+                    <button type="button" data-carousel-prev
+                            class="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-700 shadow hover:bg-white">
+                        ‹
+                    </button>
+                    <button type="button" data-carousel-next
+                            class="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-700 shadow hover:bg-white">
+                        ›
+                    </button>
+                    <div class="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5" data-carousel-dots>
+                        @foreach ($preparation->photos() as $i => $photo)
+                            <button type="button" data-carousel-dot="{{ $i }}"
+                                    class="h-2 w-2 rounded-full bg-white/60 {{ $i === 0 ? 'bg-white' : '' }}"></button>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
+
+    @if ($preparation->links()->isNotEmpty())
+        <div class="bg-white rounded-lg shadow p-5 mt-6">
+            <h2 class="text-sm font-semibold text-gray-500 mb-2">Ссылки</h2>
+            <ul class="space-y-1">
+                @foreach ($preparation->links() as $link)
+                    <li>
+                        <a href="{{ $link->url }}" target="_blank" rel="noopener" class="text-blue-600 hover:underline">
+                            🔗 {{ $link->url }}
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    @if ($preparation->videos()->isNotEmpty())
+        <div class="bg-white rounded-lg shadow p-5 mt-6">
+            <h2 class="text-sm font-semibold text-gray-500 mb-2">Видео</h2>
+            <ul class="space-y-1">
+                @foreach ($preparation->videos() as $video)
+                    <li>
+                        <a href="{{ $video->url }}" target="_blank" rel="noopener" class="text-blue-600 hover:underline">
+                            🎬 {{ $video->url }}
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <script>
         const per100 = {
             calories: {{ $preparation->caloriesPer100() }},

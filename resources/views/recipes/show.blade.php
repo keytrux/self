@@ -8,16 +8,42 @@
         <div class="flex items-center justify-between mt-2">
             <div class="flex items-center gap-3">
                 <h1 class="text-2xl font-bold">{{ $recipe->name }}</h1>
+                @if ($recipe->isShared())
+                    <span class="rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">🌐 Публичный</span>
+                @endif
                 <span class="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-                    {{ $recipe->statusEmoji() }} {{ $recipe->statusLabel() }}
+                    {{ $recipe->isCooked() ? '✓ Приготовлено' : '📝 Хочу приготовить' }}
                 </span>
+                @if ($recipe->category)
+                    <span class="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">{{ $recipe->category->name }}</span>
+                @endif
             </div>
             <div class="flex items-center gap-4">
-                @if ($recipe->isOwnedBy(auth()->user()))
+                @if (auth()->check() && ! $recipe->isOwnedBy(auth()->user()) && $recipe->isShared())
+                    <form method="POST" action="{{ route('recipes.fork', $recipe) }}">
+                        @csrf
+                        <button type="submit"
+                                class="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">
+                            📋 Создать свою версию
+                        </button>
+                    </form>
+                @endif
+                @if (auth()->check())
+                    <form method="POST" action="{{ route('recipes.toggle-favorite', $recipe) }}">
+                        @csrf
+                        <button type="submit"
+                                class="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2 {{ $recipe->isFavoritedBy(auth()->user()) ? 'text-yellow-600 bg-yellow-50' : 'text-gray-700 hover:bg-gray-50' }}">
+                            {{ $recipe->isFavoritedBy(auth()->user()) ? '★ В избранном' : '☆ В избранное' }}
+                        </button>
+                    </form>
+                @endif
+                @if (auth()->check() && $recipe->isVisibleTo(auth()->user()))
                     <a href="{{ route('preparations.create', $recipe) }}"
                        class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
                         + Новое приготовление
                     </a>
+                @endif
+                @if ($recipe->isManagedBy(auth()->user()))
                     <div class="flex items-center gap-3">
                         <a href="{{ route('recipes.edit', $recipe) }}" class="text-blue-600 hover:underline">✏️ Редактировать</a>
                         <form method="POST" action="{{ route('recipes.destroy', $recipe) }}" onsubmit="return confirm('Удалить рецепт «{{ $recipe->name }}»? Это удалит и все его приготовления.')">
@@ -41,11 +67,32 @@
     @if ($recipe->photos()->isNotEmpty())
         <div class="bg-white rounded-lg shadow p-5 mb-6">
             <h2 class="text-sm font-semibold text-gray-500 mb-3">Фотографии</h2>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                @foreach ($recipe->photos() as $photo)
-                    <img src="{{ asset('storage/' . $photo->path) }}" alt="{{ $recipe->name }}"
-                         class="w-full h-40 object-cover rounded-lg">
-                @endforeach
+            <div class="carousel relative overflow-hidden rounded-lg" data-carousel>
+                <div class="flex transition-transform duration-300" data-carousel-track>
+                    @foreach ($recipe->photos() as $photo)
+                        <div class="w-full shrink-0" data-carousel-slide>
+                            <img src="{{ asset('storage/' . $photo->path) }}" alt="{{ $recipe->name }}"
+                                 class="w-full h-64 sm:h-96 object-cover">
+                        </div>
+                    @endforeach
+                </div>
+
+                @if ($recipe->photos()->count() > 1)
+                    <button type="button" data-carousel-prev
+                            class="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-700 shadow hover:bg-white">
+                        ‹
+                    </button>
+                    <button type="button" data-carousel-next
+                            class="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-700 shadow hover:bg-white">
+                        ›
+                    </button>
+                    <div class="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5" data-carousel-dots>
+                        @foreach ($recipe->photos() as $i => $photo)
+                            <button type="button" data-carousel-dot="{{ $i }}"
+                                    class="h-2 w-2 rounded-full bg-white/60 {{ $i === 0 ? 'bg-white' : '' }}"></button>
+                        @endforeach
+                    </div>
+                @endif
             </div>
         </div>
     @endif

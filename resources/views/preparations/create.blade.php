@@ -9,7 +9,7 @@
         <p class="text-gray-600">{{ $recipe->name }}</p>
     </div>
 
-    <form method="POST" action="{{ route('preparations.store', $recipe) }}" class="bg-white rounded-lg shadow p-6 max-w-3xl">
+    <form method="POST" action="{{ route('preparations.store', $recipe) }}" enctype="multipart/form-data" class="bg-white rounded-lg shadow p-6 max-w-3xl">
         @csrf
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -36,7 +36,12 @@
 
             @php
                 $ingredients = $recipe->ingredients
-                    ->map(fn ($ing) => ['product_id' => $ing->product_id, 'amount' => $ing->amount, 'unit' => $ing->unit])
+                    ->map(fn ($ing) => [
+                        'product_id' => $ing->product_id,
+                        'product_name' => $ing->product?->name ?? '',
+                        'amount' => $ing->amount,
+                        'unit' => $ing->unit,
+                    ])
                     ->toArray();
             @endphp
 
@@ -51,6 +56,29 @@
             @error('notes') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
         </div>
 
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Фотографии результата</label>
+            <input type="file" name="photos[]" multiple accept="image/*"
+                   class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500">
+            @error('photos') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+            @error('photos.*') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Ссылки</label>
+            <div id="links-container" class="space-y-2">
+                <div class="link-row flex gap-2">
+                    <input type="url" name="links[]" placeholder="https://..."
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500">
+                    <button type="button" onclick="removeMediaRow(this)"
+                            class="text-gray-400 hover:text-red-600 text-xl leading-none px-1">&times;</button>
+                </div>
+            </div>
+            <button type="button" onclick="addMediaRow('links-container', 'links[]')"
+                    class="mt-2 text-sm text-blue-600 hover:text-blue-800">+ Добавить ссылку</button>
+            @error('links') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+        </div>
+
         <div class="flex items-center gap-3">
             <button type="submit" class="rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700">
                 Сохранить приготовление
@@ -58,4 +86,22 @@
             <a href="{{ route('recipes.show', $recipe) }}" class="text-gray-600 hover:text-gray-900">Отмена</a>
         </div>
     </form>
+
+    <script>
+        function addMediaRow(containerId, name) {
+            const container = document.getElementById(containerId);
+            const row = container.querySelector('[class$="-row"]');
+            const clone = row.cloneNode(true);
+            clone.querySelector('input').value = '';
+            container.appendChild(clone);
+        }
+
+        function removeMediaRow(button) {
+            const container = button.closest('[class$="-row"]').parentElement;
+            const rows = container.querySelectorAll('[class$="-row"]');
+            if (rows.length > 1) {
+                button.closest('[class$="-row"]').remove();
+            }
+        }
+    </script>
 @endsection

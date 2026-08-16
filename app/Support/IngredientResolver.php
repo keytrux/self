@@ -10,7 +10,7 @@ class IngredientResolver
 {
     /**
      * @param  array<int, mixed>  $rows
-     * @return array<int, array{product_id:int, amount:int|float, unit:string}>
+     * @return array<int, array{product_id:int, amount:int|float, unit:string, calories:float, protein:float, fat:float, carbs:float}>
      */
     public static function resolve(array $rows): array
     {
@@ -82,15 +82,13 @@ class IngredientResolver
                         'carbs' => $row['new_carbs'],
                     ]);
                 }
-
-                $resolvedProductId = $product->id;
             } else {
                 $resolvedProductId = (int) $productId;
 
                 $product = Product::query()
                     ->visibleToUser(auth()->id())
                     ->whereKey($resolvedProductId)
-                    ->exists();
+                    ->first();
 
                 if (! $product) {
                     $errors["ingredients.{$index}.product_id"] = 'Выберите продукт из списка или создайте новый.';
@@ -106,9 +104,14 @@ class IngredientResolver
             }
 
             $resolved[] = [
-                'product_id' => $resolvedProductId,
+                'product_id' => $product->id,
                 'amount' => (float) $amount,
                 'unit' => $row['unit'] ?? 'g',
+                // Snapshot КБЖУ продукта на момент сохранения (история не меняется).
+                'calories' => $product->calories,
+                'protein' => $product->protein,
+                'fat' => $product->fat,
+                'carbs' => $product->carbs,
             ];
         }
 
