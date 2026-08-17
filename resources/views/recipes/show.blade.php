@@ -64,20 +64,28 @@
         </div>
     @endif
 
-    @if ($recipe->photos()->isNotEmpty())
+    @php $gallery = $recipe->photos()->concat($recipe->videoFiles()); @endphp
+    @if ($gallery->isNotEmpty())
         <div class="bg-white rounded-lg shadow p-5 mb-6">
-            <h2 class="text-sm font-semibold text-gray-500 mb-3">Фотографии</h2>
+            <h2 class="text-sm font-semibold text-gray-500 mb-3">Фото и видео</h2>
             <div class="carousel relative overflow-hidden rounded-lg" data-carousel>
                 <div class="flex transition-transform duration-300" data-carousel-track>
-                    @foreach ($recipe->photos() as $photo)
+                    @foreach ($gallery as $mediaItem)
                         <div class="w-full shrink-0" data-carousel-slide>
-                            <img src="{{ asset('storage/' . $photo->path) }}" alt="{{ $recipe->name }}"
-                                 class="w-full h-64 sm:h-96 object-contain">
+                            @if ($mediaItem->type === 'video' && $mediaItem->path)
+                                <video src="{{ asset('storage/' . $mediaItem->path) }}" controls preload="metadata"
+                                       playsinline class="w-full h-64 sm:h-96 object-contain bg-black">
+                                    Ваш браузер не поддерживает видео.
+                                </video>
+                            @else
+                                <img src="{{ asset('storage/' . $mediaItem->path) }}" alt="{{ $recipe->name }}"
+                                     class="w-full h-64 sm:h-96 object-contain">
+                            @endif
                         </div>
                     @endforeach
                 </div>
 
-                @if ($recipe->photos()->count() > 1)
+                @if ($gallery->count() > 1)
                     <button type="button" data-carousel-prev
                             class="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-700 shadow hover:bg-white">
                         ‹
@@ -87,7 +95,7 @@
                         ›
                     </button>
                     <div class="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5" data-carousel-dots>
-                        @foreach ($recipe->photos() as $i => $photo)
+                        @foreach ($gallery as $i => $mediaItem)
                             <button type="button" data-carousel-dot="{{ $i }}"
                                     class="h-2 w-2 rounded-full bg-white/60 {{ $i === 0 ? 'bg-white' : '' }}"></button>
                         @endforeach
@@ -112,11 +120,11 @@
         </div>
     @endif
 
-    @if ($recipe->videos()->isNotEmpty())
+    @if ($recipe->videoLinks()->isNotEmpty())
         <div class="bg-white rounded-lg shadow p-5 mb-6">
             <h2 class="text-sm font-semibold text-gray-500 mb-2">Видео</h2>
             <ul class="space-y-1">
-                @foreach ($recipe->videos() as $video)
+                @foreach ($recipe->videoLinks() as $video)
                     <li>
                         <a href="{{ $video->url }}" target="_blank" rel="noopener" class="text-blue-600 hover:underline">
                             🎬 {{ $video->url }}

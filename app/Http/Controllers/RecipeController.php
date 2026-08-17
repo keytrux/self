@@ -91,7 +91,7 @@ class RecipeController extends Controller
         ]);
 
         $this->saveIngredients($recipe, $ingredients);
-        $this->saveLinksAndVideos($recipe, $validated);
+        $this->saveMedia($recipe, $validated, $request);
         $this->savePhotos($recipe, $request);
 
         return redirect()
@@ -156,14 +156,22 @@ class RecipeController extends Controller
         $recipe->ingredients()->delete();
         $this->saveIngredients($recipe, $ingredients);
 
-        $recipe->media()->whereIn('type', ['link', 'video'])->delete();
-        $this->saveLinksAndVideos($recipe, $validated);
+        $recipe->media()->whereIn('type', ['link', 'video'])->whereNull('path')->delete();
+        $this->saveMedia($recipe, $validated, $request);
 
         foreach (array_values($validated['remove_photos'] ?? []) as $mediaId) {
             $photo = $recipe->media()->where('type', 'photo')->find($mediaId);
             if ($photo) {
                 Storage::disk('public')->delete($photo->path);
                 $photo->delete();
+            }
+        }
+
+        foreach (array_values($validated['remove_videos'] ?? []) as $mediaId) {
+            $video = $recipe->media()->where('type', 'video')->whereNotNull('path')->find($mediaId);
+            if ($video) {
+                Storage::disk('public')->delete($video->path);
+                $video->delete();
             }
         }
 
@@ -178,8 +186,8 @@ class RecipeController extends Controller
     {
         abort_unless($recipe->isManagedBy(auth()->user()), 403);
 
-        foreach ($recipe->media()->where('type', 'photo')->get() as $photo) {
-            Storage::disk('public')->delete($photo->path);
+        foreach ($recipe->media()->whereNotNull('path')->get() as $media) {
+            Storage::disk('public')->delete($media->path);
         }
 
         $recipe->delete();
@@ -220,8 +228,21 @@ class RecipeController extends Controller
             $copy->media()->create(['type' => 'link', 'url' => $link->url]);
         }
 
-        foreach ($recipe->videos() as $video) {
+        foreach ($recipe->videoLinks() as $video) {
             $copy->media()->create(['type' => 'video', 'url' => $video->url]);
+        }
+
+        foreach ($recipe->videoFiles() as $video) {
+            $copyPath = null;
+
+            if ($video->path) {
+                $copyPath = 'recipe-videos/'.Str::random(40).'.'.Str::afterLast($video->path, '.');
+                if (Storage::disk('public')->exists($video->path)) {
+                    Storage::disk('public')->copy($video->path, $copyPath);
+                }
+            }
+
+            $copy->media()->create(['type' => 'video', 'path' => $copyPath]);
         }
 
         foreach ($recipe->photos() as $photo) {
@@ -275,10 +296,14 @@ class RecipeController extends Controller
             'links.*' => ['nullable', 'url', 'max:500'],
             'videos' => ['nullable', 'array'],
             'videos.*' => ['nullable', 'url', 'max:500'],
+            'video_files' => ['nullable', 'array'],
+            'video_files.*' => ['nullable', 'file', 'mimetypes:video/mp4,application/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo,video/x-matroska', 'max:51200'],
             'photos' => ['nullable', 'array'],
             'photos.*' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:10240'],
             'remove_photos' => ['nullable', 'array'],
             'remove_photos.*' => ['nullable', 'integer'],
+            'remove_videos' => ['nullable', 'array'],
+            'remove_videos.*' => ['nullable', 'integer'],
         ];
     }
 
@@ -300,7 +325,7 @@ class RecipeController extends Controller
     /**
      * @param  array<string, mixed>  $validated
      */
-    protected function saveLinksAndVideos(Recipe $recipe, array $validated): void
+    protected function saveMedia(Recipe $recipe, array $validated, Request $request): void
     {
         foreach (array_filter($validated['links'] ?? []) as $url) {
             $recipe->media()->create(['type' => 'link', 'url' => $url]);
@@ -308,6 +333,13 @@ class RecipeController extends Controller
 
         foreach (array_filter($validated['videos'] ?? []) as $url) {
             $recipe->media()->create(['type' => 'video', 'url' => $url]);
+        }
+
+        foreach ($request->file('video_files', []) as $video) {
+            $recipe->media()->create([
+                'type' => 'video',
+                'path' => $video->store('recipe-videos', 'public'),
+            ]);
         }
     }
 
