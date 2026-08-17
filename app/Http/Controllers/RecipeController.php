@@ -17,8 +17,8 @@ class RecipeController extends Controller
     public function index(Request $request): View
     {
         $activeStatus = match ($request->string('status')->toString()) {
-            'all', 'cooked' => $request->string('status')->toString(),
-            default => 'to_cook',
+            'to_cook', 'cooked' => $request->string('status')->toString(),
+            default => 'all',
         };
         $sort = $request->string('sort')->toString() === 'name' ? 'name' : 'date';
         $categoryId = $request->integer('category') ?: null;

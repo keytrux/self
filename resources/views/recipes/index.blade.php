@@ -94,7 +94,7 @@
                     <a href="{{ route('recipes.show', $recipe) }}" class="block">
                         @if ($cover)
                             <img src="{{ $cover->url ?: asset('storage/' . $cover->path) }}" alt="{{ $recipe->name }}"
-                                 class="w-full h-40 object-cover">
+                                 class="w-full h-40 object-contain">
                         @else
                             <div class="w-full h-40 bg-gray-100 flex items-center justify-center text-4xl text-gray-300">
                                 🍽️

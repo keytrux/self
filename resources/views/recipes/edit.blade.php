@@ -112,7 +112,7 @@
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
                     @foreach ($recipe->photos() as $photo)
                         <div class="relative">
-                            <img src="{{ asset('storage/' . $photo->path) }}" alt="" class="w-full h-32 object-cover rounded-lg">
+                            <img src="{{ asset('storage/' . $photo->path) }}" alt="" class="w-full h-32 object-contain rounded-lg">
                             <label class="absolute bottom-1 left-1 rounded bg-white/80 px-2 py-1 text-xs text-gray-800 cursor-pointer">
                                 <input type="checkbox" name="remove_photos[]" value="{{ $photo->id }}" class="mr-1">
                                 Удалить
