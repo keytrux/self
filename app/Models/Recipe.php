@@ -123,6 +123,22 @@ class Recipe extends Model
         return $this->media->where('type', 'video')->values();
     }
 
+    public function videoLinks(): Collection
+    {
+        return $this->media
+            ->where('type', 'video')
+            ->whereNotNull('url')
+            ->values();
+    }
+
+    public function videoFiles(): Collection
+    {
+        return $this->media
+            ->where('type', 'video')
+            ->whereNotNull('path')
+            ->values();
+    }
+
     public function links(): Collection
     {
         return $this->media->where('type', 'link')->values();

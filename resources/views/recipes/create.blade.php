@@ -90,6 +90,14 @@
         </div>
 
         <div class="mt-6">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Видео (файлы)</label>
+            <input type="file" name="video_files[]" multiple accept="video/*"
+                   class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500">
+            @error('video_files') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+            @error('video_files.*') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+        </div>
+
+        <div class="mt-6">
             <label class="block text-sm font-medium text-gray-700 mb-1">Фотографии</label>
             <input type="file" name="photos[]" multiple accept="image/*"
                    class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500">

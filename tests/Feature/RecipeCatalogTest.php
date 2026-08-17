@@ -8,8 +8,10 @@ use App\Models\Product;
 use App\Models\Recipe;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class RecipeCatalogTest extends TestCase
@@ -578,5 +580,64 @@ class RecipeCatalogTest extends TestCase
         $product = Product::where('name', 'Сливочное масло')->firstOrFail();
         $this->assertSame($user->id, $product->user_id);
         $this->assertFalse($product->is_public);
+    }
+
+    public function test_recipe_accepts_video_file_and_renders_in_carousel(): void
+    {
+        $user = User::factory()->create();
+        Storage::fake('public');
+
+        $mp4 = hex2bin('0000001c667479706d703432000000006d70343269736f6d');
+        $file = UploadedFile::fake()->createWithContent('clip.mp4', $mp4);
+
+        $this->actingAs($user)
+            ->post('/recipes', [
+                'name' => 'Рецепт с видео',
+                'video_files' => [$file],
+            ])
+            ->assertRedirect();
+
+        $recipe = Recipe::where('name', 'Рецепт с видео')->firstOrFail();
+        $media = $recipe->media()->where('type', 'video')->whereNotNull('path')->firstOrFail();
+
+        Storage::disk('public')->assertExists($media->path);
+
+        $this->actingAs($user)
+            ->get("/recipes/{$recipe->id}")
+            ->assertSee('Фото и видео')
+            ->assertSee('<video', false);
+    }
+
+    public function test_video_file_rejected_if_not_video(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post('/recipes', [
+                'name' => 'Рецепт с мусором',
+                'video_files' => [UploadedFile::fake()->create('evil.exe', 100)],
+            ])
+            ->assertSessionHasErrors('video_files.0');
+    }
+
+    public function test_video_file_copied_on_fork(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $user = User::factory()->create();
+        Storage::fake('public');
+
+        $recipe = Recipe::create(['user_id' => null, 'name' => 'Публичный с видео', 'is_public' => true]);
+        $recipe->media()->create(['type' => 'video', 'path' => 'recipe-videos/original.mp4']);
+        Storage::disk('public')->put('recipe-videos/original.mp4', 'video');
+
+        $this->actingAs($user)
+            ->post("/recipes/{$recipe->id}/fork")
+            ->assertRedirect();
+
+        $copy = Recipe::where('name', 'Публичный с видео')->where('user_id', $user->id)->firstOrFail();
+        $this->assertCount(1, $copy->videoFiles());
+        $this->assertNotSame('recipe-videos/original.mp4', $copy->videoFiles()->first()->path);
+        Storage::disk('public')->assertExists($copy->videoFiles()->first()->path);
+        Storage::disk('public')->assertExists('recipe-videos/original.mp4');
     }
 }

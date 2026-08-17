@@ -91,7 +91,7 @@
         <div class="mt-6">
             <label class="block text-sm font-medium text-gray-700 mb-1">Видео (ссылки)</label>
             <div id="videos-container" class="space-y-2">
-                @foreach ($recipe->videos() as $video)
+                @foreach ($recipe->videoLinks() as $video)
                     <div class="video-row flex gap-2">
                         <input type="url" name="videos[]" value="{{ old('videos.' . $loop->index, $video->url) }}"
                                class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500">
@@ -103,6 +103,27 @@
             <button type="button" onclick="addMediaRow('videos-container', 'videos[]')"
                     class="mt-2 text-sm text-blue-600 hover:text-blue-800">+ Добавить видео</button>
             @error('videos') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+        </div>
+
+        @if ($recipe->videoFiles()->isNotEmpty())
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+                    @foreach ($recipe->videoFiles() as $video)
+                        <div class="relative">
+                            <video src="{{ asset('storage/' . $video->path) }}" controls preload="metadata"
+                                   playsinline class="w-full h-32 object-contain rounded-lg bg-black"></video>
+                            <label class="absolute bottom-1 left-1 rounded bg-white/80 px-2 py-1 text-xs text-gray-800 cursor-pointer">
+                                <input type="checkbox" name="remove_videos[]" value="{{ $video->id }}" class="mr-1">
+                                Удалить
+                            </label>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            <input type="file" name="video_files[]" multiple accept="video/*"
+                   class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500">
+            @error('video_files') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+            @error('video_files.*') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
         </div>
 
         <div class="mt-6">
