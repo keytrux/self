@@ -72,7 +72,7 @@
                     @foreach ($recipe->photos() as $photo)
                         <div class="w-full shrink-0" data-carousel-slide>
                             <img src="{{ asset('storage/' . $photo->path) }}" alt="{{ $recipe->name }}"
-                                 class="w-full h-64 sm:h-96 object-cover">
+                                 class="w-full h-64 sm:h-96 object-contain">
                         </div>
                     @endforeach
                 </div>
