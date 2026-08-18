@@ -5,7 +5,7 @@
 @section('content')
     <div class="max-w-md mx-auto bg-white rounded-lg shadow p-8 mt-10">
         <h1 class="text-2xl font-bold mb-2">Восстановление пароля</h1>
-        <p class="text-sm text-gray-600 mb-6">Укажите email — мы отправим ссылку для сброса пароля.</p>
+        <p class="text-sm text-gray-600 mb-6">Укажите электронную почту — мы отправим ссылку для сброса пароля.</p>
 
         @if (session('status'))
             <p class="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{{ session('status') }}</p>
@@ -15,7 +15,7 @@
             @csrf
 
             <div>
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Электронная почта</label>
                 <input type="email" name="email" id="email" value="{{ old('email') }}" required autofocus
                        class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
                 @error('email')
