@@ -1,66 +1,132 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Рецепты и КБЖУ
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Веб-приложение для хранения продуктов и рецептов, создания приготовлений и автоматического расчёта КБЖУ. Один рецепт может иметь множество приготовлений с разными ингредиентами, граммовками и результатами расчёта.
 
-## About Laravel
+## Возможности
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Продукты
+- база продуктов с КБЖУ на 100 г (калории, белки, жиры, углеводы);
+- дополнительные поля: бренд, штрихкод, ссылка на источник, заметка;
+- уникальность штрихкода (необязательное поле);
+- личные продукты (пользователь) и общие (администратор);
+- архивация вместо физического удаления, если продукт используется в рецептах/приготовлениях;
+- динамический поиск по названию, бренду и штрихкоду (debounce 300 мс, максимум 20 результатов).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Рецепты
+- название, описание, текст, категория, фото, видео (файлы и ссылки), внешние ссылки;
+- личные и публичные рецепты (публичные создаёт только администратор);
+- избранное — персональный список каждого пользователя;
+- статус «Хочу приготовить»; факт приготовления определяется наличием приготовлений;
+- «Создать свою версию» — личная копия публичного рецепта;
+- поиск по названию, фильтры по статусу/категории/избранному, сортировка по дате и названию, пагинация;
+- карусель фотографий с кнопками и свайпом на мобильных.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Приготовления
+- несколько приготовлений одного рецепта (дата, заметка, фото);
+- ингредиенты копируются из рецепта с возможностью менять граммовки, добавлять и удалять продукты без изменения исходного рецепта;
+- фактический вес готового блюда указывается вручную;
+- КБЖУ всего блюда, на 100 г и произвольной порции (порция не сохраняется);
+- сохранение snapshot КБЖУ каждого ингредиента — история не пересчитывается при изменении продукта.
 
-## Learning Laravel
+### Доступ
+- роли User и Admin;
+- пользователь видит только свои личные данные и общие/публичные;
+- проверка прав владельца на сервере (не только скрытие кнопок в интерфейсе);
+- регистрация, вход, выход, восстановление пароля.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Техническое
+- локализация интерфейса (русский, `APP_LOCALE=ru`);
+- адаптивная вёрстка под ПК, планшет и телефон (скролл таблиц, перенос плашек и кнопок);
+- серверная валидация всех входных данных, защита от массового присваивания (`fillable`);
+- безопасное хранение файлов через Laravel Storage с проверкой MIME-типов и размера;
+- Feature-тесты основных сценариев и прав доступа.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Стек
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- Laravel 12, PHP ^8.4;
+- MySQL (тесты — SQLite in-memory);
+- Blade, Tailwind CSS (Vite);
+- Laravel Storage для файлов.
 
-## Laravel Sponsors
+## Модель данных
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```
+Продукт
+   ↓
+Ингредиент рецепта
+   ↓
+Рецепт
+   ↓
+Приготовление
+   ↓
+Расчёт КБЖУ
+```
 
-### Premium Partners
+Основные таблицы: `users`, `products`, `categories`, `recipes`, `recipe_ingredients`, `preparations`, `preparation_ingredients` (со snapshot КБЖУ на момент сохранения), `media` (фото/видео рецепта или приготовления).
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+Формулы:
 
-## Contributing
+```
+КБЖУ ингредиента = КБЖУ продукта на 100 г × количество / 100
+КБЖУ блюда     = Σ КБЖУ ингредиентов
+КБЖУ на 100 г  = КБЖУ блюда / вес готового блюда × 100
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Установка
 
-## Code of Conduct
+```bash
+git clone <репозиторий> self
+cd self
+composer install
+cp .env.example .env
+php artisan key:generate
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+В `.env` настроить:
 
-## Security Vulnerabilities
+```ini
+APP_LOCALE=ru
+DB_CONNECTION=mysql
+DB_DATABASE=...
+DB_USERNAME=...
+DB_PASSWORD=...
+MAIL_MAILER=...   # почта для восстановления пароля, например log или smtp
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Затем:
 
-## License
+```bash
+php artisan migrate
+php artisan storage:link    # публичная ссылка на фото/видео
+npm install
+npm run build
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Для загрузки видео увеличьте лимиты PHP в `php.ini` (`upload_max_filesize` и `post_max_size`).
+
+## Запуск
+
+```bash
+php artisan serve
+npm run dev       # в отдельном терминале, для разработки
+```
+
+## Тесты
+
+```bash
+php artisan test
+php artisan pint --test
+```
+
+Тесты покрывают: авторизацию и восстановление пароля; CRUD и архивацию продуктов; права на личные/общие данные; публичные рецепты и их форк; избранное; расчёт КБЖУ и сохранение исторического snapshot; работу с видео; корректность доступов к чужим данным.
+
+## Структура
+
+```
+app/Http/Controllers/   # Products, Recipes, Preparations, Categories, Auth
+app/Models/             # Product, Recipe, Preparation, Category, Media
+database/migrations/    # схема и индексы
+resources/views/        # Blade-шаблоны (products, recipes, preparations, categories, auth, layouts)
+tests/Feature/          # функциональные тесты
+lang/ru/                # русская локализация
+```
