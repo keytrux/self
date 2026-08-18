@@ -5,8 +5,8 @@
 @section('content')
     <div class="mb-6">
         <a href="{{ route('recipes.index') }}" class="text-blue-600 hover:underline">← К рецептам</a>
-        <div class="flex items-center justify-between mt-2">
-            <div class="flex items-center gap-3">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex flex-wrap items-center gap-3">
                 <h1 class="text-2xl font-bold">{{ $recipe->name }}</h1>
                 @if ($recipe->isShared())
                     <span class="rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">🌐 Публичный</span>
@@ -18,12 +18,12 @@
                     <span class="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">{{ $recipe->category->name }}</span>
                 @endif
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex flex-wrap items-center gap-2">
                 @if (auth()->check() && ! $recipe->isOwnedBy(auth()->user()) && $recipe->isShared())
                     <form method="POST" action="{{ route('recipes.fork', $recipe) }}">
                         @csrf
                         <button type="submit"
-                                class="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">
+                                class="inline-flex items-center whitespace-nowrap rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">
                             📋 Создать свою версию
                         </button>
                     </form>
@@ -32,19 +32,19 @@
                     <form method="POST" action="{{ route('recipes.toggle-favorite', $recipe) }}">
                         @csrf
                         <button type="submit"
-                                class="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2 {{ $recipe->isFavoritedBy(auth()->user()) ? 'text-yellow-600 bg-yellow-50' : 'text-gray-700 hover:bg-gray-50' }}">
+                                class="inline-flex items-center whitespace-nowrap rounded-lg border border-gray-300 px-4 py-2 {{ $recipe->isFavoritedBy(auth()->user()) ? 'text-yellow-600 bg-yellow-50' : 'text-gray-700 hover:bg-gray-50' }}">
                             {{ $recipe->isFavoritedBy(auth()->user()) ? '★ В избранном' : '☆ В избранное' }}
                         </button>
                     </form>
                 @endif
                 @if (auth()->check() && $recipe->isVisibleTo(auth()->user()))
                     <a href="{{ route('preparations.create', $recipe) }}"
-                       class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+                       class="inline-flex items-center whitespace-nowrap rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
                         + Новое приготовление
                     </a>
                 @endif
                 @if ($recipe->isManagedBy(auth()->user()))
-                    <div class="flex items-center gap-3">
+                    <div class="flex flex-wrap items-center gap-3">
                         <a href="{{ route('recipes.edit', $recipe) }}" class="text-blue-600 hover:underline">✏️ Редактировать</a>
                         <form method="POST" action="{{ route('recipes.destroy', $recipe) }}" onsubmit="return confirm('Удалить рецепт «{{ $recipe->name }}»? Это удалит и все его приготовления.')">
                             @csrf
@@ -141,7 +141,8 @@
         @if ($recipe->ingredients->isEmpty())
             <p class="text-gray-500 text-sm">Ингредиенты не добавлены.</p>
         @else
-            <table class="min-w-full divide-y divide-gray-100">
+            <div class="overflow-x-auto">
+                <table class="min-w-[560px] divide-y divide-gray-100 whitespace-nowrap">
                 <thead>
                     <tr class="text-left text-xs text-gray-400 uppercase">
                         <th class="py-2">Продукт</th>
@@ -178,7 +179,8 @@
                         <td class="py-3 text-right">{{ number_format($totals['carbs'], 1, '.', ' ') }} г</td>
                     </tr>
                 </tfoot>
-            </table>
+                </table>
+            </div>
         @endif
     </div>
 

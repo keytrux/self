@@ -3,7 +3,7 @@
 @section('title', 'Мои рецепты')
 
 @section('content')
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h1 class="text-2xl font-bold">Мои рецепты</h1>
         <a href="{{ route('recipes.create') }}"
            class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
@@ -30,7 +30,7 @@
         @endforeach
     </form>
 
-    <div class="mb-6 flex flex-wrap items-center gap-2">
+    <div class="mb-3 flex flex-wrap items-center gap-2">
         <a href="{{ route('recipes.index', array_merge(request()->except(['status', 'page']), ['status' => 'all'])) }}"
            class="rounded-full px-3 py-1 text-sm {{ $activeStatus === 'all' ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
             Все ({{ $totalCount }})
@@ -52,9 +52,11 @@
                 ★ Избранное
             </a>
         @endif
+    </div>
 
-        <div class="ml-auto flex items-center gap-2">
-            <span class="text-sm text-gray-500">Сортировка:</span>
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-2">
+        <span class="text-sm text-gray-500">Сортировка:</span>
+        <div class="flex flex-wrap items-center gap-2">
             <a href="{{ route('recipes.index', array_merge(request()->except(['sort', 'page']), ['sort' => 'date'])) }}"
                class="rounded-full px-3 py-1 text-sm {{ $sort === 'date' ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
                 По дате
