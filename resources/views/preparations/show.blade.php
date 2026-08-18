@@ -5,7 +5,7 @@
 @section('content')
     <div class="mb-6">
         <a href="{{ route('recipes.show', $preparation->recipe) }}" class="text-blue-600 hover:underline">← К рецепту</a>
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h1 class="text-2xl font-bold mt-2">{{ $preparation->recipe->name }}</h1>
             <p class="text-gray-600">Приготовление от {{ $preparation->prepared_at->format('d.m.Y') }}</p>
@@ -25,7 +25,8 @@
 
     <div class="bg-white rounded-lg shadow p-5 mb-6">
         <h2 class="text-sm font-semibold text-gray-500 mb-3">Ингредиенты</h2>
-        <table class="min-w-full divide-y divide-gray-100">
+        <div class="overflow-x-auto">
+        <table class="min-w-[560px] divide-y divide-gray-100 whitespace-nowrap">
             <thead>
                 <tr class="text-left text-xs text-gray-400 uppercase">
                     <th class="py-2">Продукт</th>
@@ -53,6 +54,7 @@
                 @endforeach
             </tbody>
         </table>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
@@ -111,7 +113,7 @@
                 <input type="number" id="portion-weight" step="0.01" min="0" placeholder="Вес порции, г"
                        class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500">
                 <button type="button" onclick="calculatePortion()"
-                        class="rounded-lg bg-gray-900 px-4 py-2 text-white hover:bg-gray-700">Рассчитать</button>
+                        class="whitespace-nowrap rounded-lg bg-gray-900 px-4 py-2 text-white hover:bg-gray-700">Рассчитать</button>
             </div>
             <div id="portion-result" class="hidden text-sm">
                 <div class="grid grid-cols-4 gap-2 text-center">

@@ -19,7 +19,7 @@
             </div>
 
             <div>
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Электронная почта</label>
                 <input type="email" name="email" id="email" value="{{ old('email') }}" required
                        class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500">
                 @error('email')

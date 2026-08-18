@@ -13,7 +13,7 @@
 </head>
 <body class="bg-gray-100 text-gray-900 antialiased">
     <nav class="bg-white border-b border-gray-200">
-        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-6">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-2">
             <a href="{{ route('recipes.index') }}" class="font-semibold text-gray-800 hover:text-gray-600">КБЖУ</a>
             <a href="{{ route('recipes.index') }}" class="text-gray-600 hover:text-gray-900">Рецепты</a>
             <a href="{{ route('products.index') }}" class="text-gray-600 hover:text-gray-900">Продукты</a>
